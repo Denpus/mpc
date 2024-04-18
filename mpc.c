@@ -3507,8 +3507,12 @@ static int is_number(const char* s) {
 
 static mpc_parser_t *mpca_grammar_find_parser(char *x, mpca_grammar_st_t *st) {
 
-  int i;
-  mpc_parser_t *p;
+  int i, is_arr;
+  mpc_parser_t *p, **pp;
+
+  /* For copy parsers if not va_list */
+  is_arr = st->flags & MPCA_GET_ARRAY;
+  pp = is_arr ? (void *)st->va : 0;
 
   /* Case of Number */
   if (is_number(x)) {
@@ -3518,7 +3522,7 @@ static mpc_parser_t *mpca_grammar_find_parser(char *x, mpca_grammar_st_t *st) {
     while (st->parsers_num <= i) {
       st->parsers_num++;
       st->parsers = realloc(st->parsers, sizeof(mpc_parser_t*) * st->parsers_num);
-      st->parsers[st->parsers_num-1] = va_arg(*st->va, mpc_parser_t*);
+      st->parsers[st->parsers_num-1] = is_arr ? pp[st->parsers_num] : va_arg(*st->va, mpc_parser_t*);
       if (st->parsers[st->parsers_num-1] == NULL) {
         return mpc_failf("No Parser in position %i! Only supplied %i Parsers!", i, st->parsers_num);
       }
@@ -3539,7 +3543,7 @@ static mpc_parser_t *mpca_grammar_find_parser(char *x, mpca_grammar_st_t *st) {
     /* Search New Parsers */
     while (1) {
 
-      p = va_arg(*st->va, mpc_parser_t*);
+      p = is_arr ? pp[st->parsers_num] : va_arg(*st->va, mpc_parser_t*);
 
       st->parsers_num++;
       st->parsers = realloc(st->parsers, sizeof(mpc_parser_t*) * st->parsers_num);
@@ -3856,6 +3860,24 @@ mpc_err_t *mpca_lang(int flags, const char *language, ...) {
 
   free(st.parsers);
   va_end(va);
+  return err;
+}
+
+mpc_err_t *mpca_lang_ls(int flags, const char *language, mpc_parser_t *ls[]) {
+  mpca_grammar_st_t st;
+  mpc_input_t *i;
+  mpc_err_t *err;
+
+  st.va = (void *)ls;
+  st.parsers_num = 0;
+  st.parsers = NULL;
+  st.flags = flags | MPCA_GET_ARRAY;
+
+  i = mpc_input_new_string("<mpca_lang>", language);
+  err = mpca_lang_st(i, &st);
+  mpc_input_delete(i);
+
+  free(st.parsers);
   return err;
 }
 

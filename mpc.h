@@ -355,12 +355,14 @@ mpc_parser_t *mpca_and(int n, ...);
 enum {
   MPCA_LANG_DEFAULT              = 0,
   MPCA_LANG_PREDICTIVE           = 1,
-  MPCA_LANG_WHITESPACE_SENSITIVE = 2
+  MPCA_LANG_WHITESPACE_SENSITIVE = 2,
+  MPCA_GET_ARRAY                 = 4 /* Get parsers from array */
 };
 
 mpc_parser_t *mpca_grammar(int flags, const char *grammar, ...);
 
 mpc_err_t *mpca_lang(int flags, const char *language, ...);
+mpc_err_t *mpca_lang_ls(int flags, const char *language, mpc_parser_t *ls[]);
 mpc_err_t *mpca_lang_file(int flags, FILE *f, ...);
 mpc_err_t *mpca_lang_pipe(int flags, FILE *f, ...);
 mpc_err_t *mpca_lang_contents(int flags, const char *filename, ...);
